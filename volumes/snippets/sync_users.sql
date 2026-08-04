@@ -6,8 +6,8 @@
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.user_profiles (id, first_name, last_name)
-  VALUES (new.id, '', '');
+  INSERT INTO public.user_profiles (id, first_name, last_name, email)
+  VALUES (new.id, '', '', new.email);
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -19,7 +19,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 -- 3. Sincronizar (Backfill) usuarios existentes que no tienen perfil
-INSERT INTO public.user_profiles (id, first_name, last_name)
-SELECT id, '', '' FROM auth.users
+INSERT INTO public.user_profiles (id, first_name, last_name, email)
+SELECT id, '', '', email FROM auth.users
 WHERE id NOT IN (SELECT id FROM public.user_profiles)
 ON CONFLICT (id) DO NOTHING;
